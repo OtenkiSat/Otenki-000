@@ -5,14 +5,14 @@
 #include "BME280.h"
 
 // I2Cピン定義 (NUCLEO L432KCの場合)
-#define SDA_PIN PB_7
-#define SCL_PIN PB_6
+//#define SDA_PIN PB_7
+//#define SCL_PIN PB_6
 
 // I2Cインタフェース作成
-I2C i2c(SDA_PIN, SCL_PIN);
+//I2C i2c(SDA_PIN, SCL_PIN);
 
 // BME280インスタンスをI2Cで作成 (アドレスは0x76)
-BME280 tenkisensor(i2c); // アドレスを左シフトして8bitにする
+BME280 tenkisensor(PB_7, PB_6); // アドレスを左シフトして8bitにする
 
 LITE_CDH cdh(PB_5, PB_4, PB_3, PA_8, "sd", PA_3);
 LITE_EPS    eps(PA_0, PA_4);
@@ -70,10 +70,11 @@ void log_task() {
     wait(0.01f);
     
     // 2) データ取得
-    printf("a");
+    pc.printf("a");
     float batvol, temp;
     eps.vol(&batvol);
     sensor.temp_sense(&temp);
+
     float tenkitemp = tenkisensor.getTemperature();
     float humidity = tenkisensor.getHumidity();
     float pressure = tenkisensor.getPressure();
@@ -109,7 +110,9 @@ void log_task() {
 
 int main() {
     pc.printf("Start logging every %.0f s\r\n", LOG_INTERVAL);
-    init_time();            //起動時に時刻を設定
+    //init_time();            //起動時に時刻を設定
+    eps.turn_on_regulator();
+    wait(1.01f);
 
     // ディレクトリとヘッダの準備（初回のみ）
     mkdir("/sd/mydir", 0777);
@@ -131,14 +134,18 @@ int main() {
        // sleep();
     //}
     while(1){
-        //eps.turn_on_regulator();
-        // wait(0.01f);
+        
         
         // 2) データ取得
         
         float batvol, temp,tenkitemp;
         eps.vol(&batvol);
         sensor.temp_sense(&temp);
+        float mx,my,mz;
+        sensor.set_up();
+        sensor.sen_acc(&mx,&my,&mz);
+        tenkisensor.initialize();
+        pc.printf("mag : %f,%f,%f\r\n",mx,my,mz);
         tenkitemp = tenkisensor.getTemperature();
         float humidity = tenkisensor.getHumidity();
         float pressure = tenkisensor.getPressure();
